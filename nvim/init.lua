@@ -2,131 +2,26 @@
 vim.o.tabstop = 4
 vim.o.shiftwidth = 4
 vim.o.expandtab = true
-
 vim.o.autoindent = true
 vim.o.clipboard = "unnamedplus"
 vim.o.number = true
 vim.o.showmatch = true
 vim.o.showcmd = true
-
 vim.o.ignorecase = all
 vim.o.smartcase = true
 vim.o.hlsearch = true
-
-vim.cmd([[
-autocmd BufReadPost *
-\ if line("'\"") > 0 && line("'\"") <= line("$") |
-\   exe "normal! g`\"" |
-\ endif
-]])
-
 -- persistent undo
 vim.o.undofile = true
 vim.o.undodir = vim.fn.expand('~/.config/nvim/undodir')
 vim.o.undolevels = 1000
 vim.o.undoreload = 10000
-
--- nvim plugins
---
--- Ensure Packer is installed
-local install_path = vim.fn.stdpath('data')..'/site/pack/packer/start/packer.nvim'
-if vim.fn.empty(vim.fn.glob(install_path)) > 0 then
-    vim.api.nvim_command('!git clone https://github.com/wbthomason/packer.nvim ' .. install_path)
-end
-
--- Auto install packer.nvim if not exists
-if vim.fn.empty(vim.fn.glob(install_path)) > 0 then
-    vim.api.nvim_command('!git clone https://github.com/wbthomason/packer.nvim ' .. install_path)
-end
-
--- Load Packer
-vim.cmd [[packadd packer.nvim]]
-vim.cmd 'autocmd BufWritePost init.lua PackerCompile'
-
--- Define plugins
-require('packer').startup(function()
-    use 'hrsh7th/nvim-cmp'
-    use 'hrsh7th/cmp-buffer'
-    use 'hrsh7th/cmp-path'
-    use 'hrsh7th/cmp-nvim-lua'
-    use 'hrsh7th/cmp-nvim-lsp'
-    use 'saadparwaiz1/cmp_luasnip'
-    use 'L3MON4D3/LuaSnip'
-
-    use 'neovim/nvim-lspconfig'
-    use 'nvim-lua/lsp-status.nvim'
-    use 'nvim-lua/lsp_extensions.nvim'
-
-    use 'nvim-lua/plenary.nvim'
-    use 'nvim-lua/popup.nvim'
-
-    use 'nvim-telescope/telescope.nvim'
-    use 'nvim-telescope/telescope-fzy-native.nvim'
-
-    -- Packer can manage itself
-    use 'wbthomason/packer.nvim'
-    --use 'github/copilot.vim'
-    use 'zbirenbaum/copilot.lua' as = 'copilot'
-
-    use {
-        "zbirenbaum/copilot.lua",
-        cmd = "Copilot",
-        event = "InsertEnter",
-        config = function()
-            require("copilot").setup({})
-        end,
-    }
-
-    -- Lazy loading:
-    -- Load on specific commands
-    use {'tpope/vim-dispatch', opt = true, cmd = {'Dispatch', 'Make', 'Focus', 'Start'}}
-
-    -- Load on an autocommand event
-    use {'andymass/vim-matchup', event = 'VimEnter'}
-
-    -- Load on a combination of conditions: specific filetypes or commands
-    -- Also run code after load (see the "config" key)
-    use {
-        'w0rp/ale',
-        ft = {'sh', 'zsh', 'bash', 'c', 'cpp', 'cmake', 'html', 'markdown', 'racket', 'vim', 'tex'},
-        cmd = 'ALEEnable',
-        config = 'vim.cmd[[ALEEnable]]'
-    }
-
-    -- Post-install/update hook with call of vimscript function with argument
-    use { 'glacambre/firenvim', run = function() vim.fn['firenvim#install'](0) end }
-
-    -- Use dependency and run lua function after load
-    use {
-        'lewis6991/gitsigns.nvim', requires = { 'nvim-lua/plenary.nvim' },
-        config = function() require('gitsigns').setup() end
-    }
-
-    -- You can specify multiple plugins in a single call
-    use {'tjdevries/colorbuddy.vim', {'nvim-treesitter/nvim-treesitter', opt = true}}
-
-    -- You can alias plugin names
-    use {'sainnhe/sonokai'}
-end)
-
--- Setup language servers.
-local lspconfig = require('lspconfig')
-lspconfig.html.setup {}
-lspconfig.cssls.setup {}
-lspconfig.jsonls.setup {}
-lspconfig.vimls.setup {}
-lspconfig.bashls.setup {}
-lspconfig.clangd.setup {}
---lspconfig.lua.setup {}
-lspconfig.pyright.setup {}
-lspconfig.tsserver.setup {}
-lspconfig.rust_analyzer.setup {
-    -- Server-specific settings. See `:help lspconfig-setup`
-    settings = {
-        ['rust-analyzer'] = {},
-    },
-}
-
+-- open in the same line
+vim.cmd([[
+    autocmd BufReadPost *
+    \ if line("'\"") > 0 && line("'\"") <= line("$") |
+    \   exe "normal! g`\"" |
+    \ endif
+]])
 
 -- Global mappings.
 -- See `:help vim.diagnostic.*` for documentation on any of the below functions
@@ -134,6 +29,90 @@ vim.keymap.set('n', '<space>e', vim.diagnostic.open_float)
 vim.keymap.set('n', '[d', vim.diagnostic.goto_prev)
 vim.keymap.set('n', ']d', vim.diagnostic.goto_next)
 vim.keymap.set('n', '<space>q', vim.diagnostic.setloclist)
+
+vim.keymap.set('i', '<Tab>', function()
+    if require("copilot.suggestion").is_visible() then
+        require("copilot.suggestion").accept()
+    else
+        vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Tab>", true, false, true), "n", false)
+    end
+end, { desc = "Super Tab" })
+
+vim.cmd('colorscheme sonokai')
+
+-- Force background color to be black (000000)
+vim.cmd('highlight Normal guibg=NONE ctermbg=NONE')
+-- nvim plugins
+--
+local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
+if not vim.loop.fs_stat(lazypath) then
+  vim.fn.system({
+    "git",
+    "clone",
+    "--filter=blob:none",
+    "https://github.com/folke/lazy.nvim.git",
+    "--branch=stable", -- latest stable release
+    lazypath,
+  })
+end
+vim.opt.rtp:prepend(lazypath)
+
+plugins = {
+    "neovim/nvim-lspconfig",
+    "hrsh7th/nvim-cmp",
+    "hrsh7th/cmp-nvim-lsp",
+    "hrsh7th/cmp-buffer",
+    "hrsh7th/cmp-path",
+    "zbirenbaum/copilot-cmp",
+    "petertriho/cmp-git",
+    "L3MON4D3/LuaSnip",
+    "nvim-lua/plenary.nvim",
+    "nvim-lua/popup.nvim",
+    "nvim-telescope/telescope.nvim",
+    "nvim-telescope/telescope-fzy-native.nvim",
+    {
+        "zbirenbaum/copilot.lua",
+        cmd = "Copilot",
+        event = "InsertEnter",
+        config = function()
+            require("copilot").setup({})
+        end,
+    },
+    {
+      "zbirenbaum/copilot-cmp",
+      config = function ()
+        require("copilot_cmp").setup()
+      end
+    },
+    {
+        "tpope/vim-dispatch",
+        cmd = { "Dispatch", "Make", "Focus", "Start" },
+    },
+    {
+        "andymass/vim-matchup",
+        event = "VimEnter",
+    },
+    {
+        "glacambre/firenvim",
+        run = function()
+            vim.fn["firenvim#install"](0)
+        end,
+    },
+    {
+        "lewis6991/gitsigns.nvim",
+        requires = { "nvim-lua/plenary.nvim" },
+        config = function()
+            require("gitsigns").setup()
+        end,
+    },
+    { "tjdevries/colorbuddy.vim", { "nvim-treesitter/nvim-treesitter", opt = true } },
+    { "sainnhe/sonokai" },
+    { "numToStr/Comment.nvim", config = function() require("Comment").setup() end }
+}
+
+require("lazy").setup(plugins)
+
+-- Setup language servers.
 
 -- Use LspAttach autocommand to only map the following keys
 -- after the language server attaches to the current buffer
@@ -169,6 +148,120 @@ vim.api.nvim_create_autocmd('LspAttach', {
     end,
 })
 
+-- lspconfig; language servers
+local lspconfig = require('lspconfig')
+local lsp_capabilities = require('cmp_nvim_lsp').default_capabilities()
+
+lspconfig = require('lspconfig')
+lspconfig.html.setup {
+  capabilities = lsp_capabilities
+}
+lspconfig.cssls.setup {
+  capabilities = lsp_capabilities
+}
+lspconfig.jsonls.setup {
+  capabilities = lsp_capabilities
+}
+lspconfig.vimls.setup {
+  capabilities = lsp_capabilities
+}
+lspconfig.bashls.setup {
+  capabilities = lsp_capabilities
+}
+lspconfig.clangd.setup {
+  capabilities = lsp_capabilities
+}
+lspconfig.tsserver.setup {
+  capabilities = lsp_capabilities
+}
+lspconfig.rust_analyzer.setup {
+  capabilities = lsp_capabilities
+}
+lspconfig.pyright.setup {
+    settings = {
+        python = {
+            analysis = {
+                autoSearchPaths = true,
+                diagnosticMode = "openFilesOnly",
+                useLibraryCodeForTypes = true,
+            },
+        },
+    },
+    capabilities = lsp_capabilities
+}
+
+local cmp = require('cmp')
+require('cmp').setup({
+    snippet = {
+      expand = function(args)
+        require('luasnip').lsp_expand(args.body)
+      end,
+    },
+    mapping = cmp.mapping.preset.insert({
+      ['<C-b>'] = cmp.mapping.scroll_docs(-4),
+      ['<C-f>'] = cmp.mapping.scroll_docs(4),
+      ['<C-Space>'] = cmp.mapping.complete(),
+      ['<C-e>'] = cmp.mapping.abort(),
+      ['<CR>'] = cmp.mapping.confirm({ select = true }), -- Accept currently selected item. Set `select` to `false` to only confirm explicitly selected items.
+    }),
+    sources = cmp.config.sources(
+        {
+          { name = 'nvim_lsp' },
+          { name = 'luasnip' },
+          { name = 'copilot' },
+          { name = "nvim_lsp", group_index = 2 },
+          { name = "path", group_index = 2 },
+        },
+        {
+            {name = 'buffer'},
+        }
+    )
+})
+
+local has_words_before = function()
+  if vim.api.nvim_buf_get_option(0, "buftype") == "prompt" then return false end
+  local line, col = unpack(vim.api.nvim_win_get_cursor(0))
+  return col ~= 0 and vim.api.nvim_buf_get_text(0, line-1, 0, line-1, col, {})[1]:match("^%s*$") == nil
+end
+cmp.setup({
+  mapping = {
+    ["<Tab>"] = vim.schedule_wrap(function(fallback)
+      if cmp.visible() and has_words_before() then
+        cmp.select_next_item({ behavior = cmp.SelectBehavior.Select })
+      else
+        fallback()
+      end
+    end),
+  },
+})
+
+cmp.setup.filetype('gitcommit', {
+    sources = cmp.config.sources(
+        {
+            {name = 'git'},
+            {name = 'buffer'},
+        }
+    )
+})
+
+-- Use buffer source for `/` and `?` (if you enabled `native_menu`, this won't work anymore).
+cmp.setup.cmdline({ '/', '?' }, {
+mapping = cmp.mapping.preset.cmdline(),
+sources = {
+  { name = 'buffer' }
+}
+})
+
+-- Use cmdline & path source for ':' (if you enabled `native_menu`, this won't work anymore).
+cmp.setup.cmdline(':', {
+mapping = cmp.mapping.preset.cmdline(),
+sources = cmp.config.sources({
+  { name = 'path' }
+}, {
+  { name = 'cmdline' }
+})
+}
+)
 
 require('copilot').setup({
     panel = {
@@ -205,15 +298,3 @@ require('copilot').setup({
     server_opts_overrides = {},
 })
 
-vim.keymap.set('i', '<Tab>', function()
-    if require("copilot.suggestion").is_visible() then
-        require("copilot.suggestion").accept()
-    else
-        vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Tab>", true, false, true), "n", false)
-    end
-end, { desc = "Super Tab" })
-
-vim.cmd('colorscheme sonokai')
-
--- Force background color to be black (000000)
-vim.cmd('highlight Normal guibg=NONE ctermbg=NONE')
